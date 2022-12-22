@@ -55,6 +55,7 @@ exports.postUserSignup = async (req, res) => {
                     title: "Invalid Request",
                     message: "User Already Exists"
                 });
+                return
             }
             await newUser.save((err) => {
                 if (err)
