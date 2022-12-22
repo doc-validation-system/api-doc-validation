@@ -2,8 +2,13 @@ const express = require("express");
 const mongoose = require('mongoose');
 const cors = require("cors");
 const session = require("express-session");
+const bodyParser = require("body-parser");
 require("dotenv").config();
 const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
+const { postUserSignup } = require("./src/controller/userController");
 
 
 const PORT = process.env.PORT || 3000;
@@ -23,6 +28,9 @@ app.get("/", (req, res) => {
         message: "Api is Running Copyright @TeamDocValidation"
     })
 });
+
+// User Signup API
+app.post("/user/signup", postUserSignup);
 
 app.listen(PORT, () => {
     console.log("Server is Running");
