@@ -9,12 +9,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 const { postUserSignup } = require("./src/controller/userController");
+mongoose.set('strictQuery', true);
 
 
 const PORT = process.env.PORT || 3000;
 const pass = process.env.dbPassword;
 
-mongoose.connect(`mongodb+srv://admin-aces:${pass}@cluster0.buvru.mongodb.net/docvalidation`, {
+mongoose.connect(`mongodb+srv://admin-aces:Aces1234@cluster0.buvru.mongodb.net/docvalidation`, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then((res) => {

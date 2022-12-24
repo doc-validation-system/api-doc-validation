@@ -1,7 +1,6 @@
-const mongoose = require("mongoose");
 const { User } = require("../model/userModel");
 const md5 = require("md5");
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
 
 exports.postUserSignup = async (req, res) => {
     const { emailId, organizationName, password } = req.body;
@@ -57,50 +56,13 @@ exports.postUserSignup = async (req, res) => {
                 });
                 return
             }
-            await newUser.save((err) => {
+            newUser.save((err) => {
                 if (err)
-                    console.log(err);
-                else {
-                    res.status(201).json({
-                        title: "Request Generated Succcessfully",
-                        message: `${emailId} registration successfull`
-                    });
-                    // const transporter = nodemailer.createTransport({
-                    //     service: 'gmail',
-                    //     auth: {
-                    //         user: 'govschoolattendance@gmail.com',
-                    //         pass: 'Aces1234'
-                    //     },
-                    //     secure: true
-                    // })
-                    // const mailOptions = {
-                    //     from: process.env.websiteMail,
-                    //     to: emailId,
-                    //     subject: `Successfull Registration of ${organizationName}`,
-                    //     text: `${emailId} has been registered, 
-                    // Your Login credentials are:
-                    // Your-username: ${emailId}
-                    // Your-APIKEY: ${apiKey}`
-                    // };
-
-                    // transporter.sendMail(mailOptions, (error, info) => {
-                    //     if (error) {
-                    //         console.log(error);
-                    //         res.status(535).json({
-                    //             message: "Sending mail Failed"
-                    //         });
-                    //         return
-                    //     } else {
-                    //         console.log('Email sent: ' + info.response);
-                    //         res.status(201).json({
-                    //             title: "Request Generated Succcessfully",
-                    //             message: `${emailId} registration successfull`
-                    //         });
-                    //         console.log("Successfully Registered");
-                    //         return
-                    //     }
-                    // });
-                }
+                    console.log(err + "ERROR");
+            });
+            res.status(201).json({
+                title: "Request Generated Succcessfully",
+                message: `${emailId} registration successfull`
             });
         } catch (e) {
             console.log(e);
