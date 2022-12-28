@@ -22,6 +22,11 @@ const customerUser = new Schema({
     apiKey: {
         type: String,
         required: true
+    },
+    token: String,
+    updateAt: {
+        type: String,
+        required: true
     }
 });
 
