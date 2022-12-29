@@ -3,9 +3,9 @@ const { User } = require("../model/userModel");
 const secretKey = process.env.secretKey;
 
 exports.isUser = async (req, res, next) => {
-    const authorization = req.headers.Authorization;
+    const { authorization } = req.headers;
     console.log(authorization);
-    if (!authorization) {
+    if (authorization == null) {
         res.status(405).json({
             title: "Invalid Request",
             message: "Please Check the Request Header Token Mismatch"
@@ -15,7 +15,7 @@ exports.isUser = async (req, res, next) => {
     if (!authorization.startsWith("Bearer ")) {
         res.status(405).json({
             title: "Invalid Request",
-            message: "Please Check the Request Header Token Mismatch"
+            message: "Hearder not Started with bearer"
         });
         return
     }

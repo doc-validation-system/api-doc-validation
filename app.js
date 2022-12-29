@@ -13,7 +13,7 @@ const { isUser } = require("./src/middleware/isUser");
 mongoose.set('strictQuery', true);
 
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const pass = process.env.dbPassword;
 
 mongoose.connect(`mongodb+srv://admin-aces:${pass}@cluster0.buvru.mongodb.net/docvalidation`, {
@@ -39,7 +39,7 @@ app.post("/user/login", postUserLogin);
 
 // User Profile Details
 
-app.get("user/profile/:emailId", isUser, getProfileDetails);
+app.get('/user/profile/:emailId', isUser, getProfileDetails);
 
 app.listen(PORT, () => {
     console.log("Server is Running");

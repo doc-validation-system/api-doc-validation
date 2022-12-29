@@ -149,7 +149,7 @@ exports.postUserLogin = async (req, res) => {
 }
 
 exports.getProfileDetails = async (req, res) => {
-    const emailId = "hello@docvalidation.org"
+    const emailId = req.body;
     let user = await User.findOne({ emailId: emailId });
     if (!user) {
         res.status(406).json({
