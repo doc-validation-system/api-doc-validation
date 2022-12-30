@@ -123,7 +123,7 @@ exports.postUserLogin = async (req, res) => {
                     date = "0" + date;
                 if (user.password == md5(password)) {
                     const token = jwt.sign({ id: user._id }, secretKey, { expiresIn: "12h" });
-                    await user.updateOne({ emailId: emailId }, { token: token, updateAt: today.getFullYear() + "-" + month + "-" + date });
+                    await User.updateOne({ emailId: emailId }, { token: token, updateAt: today.getFullYear() + "-" + month + "-" + date });
                     res.status(200).json({
                         title: "User Successfully Logged in",
                         organizationName: user.organizationName,
@@ -149,7 +149,7 @@ exports.postUserLogin = async (req, res) => {
 }
 
 exports.getProfileDetails = async (req, res) => {
-    const emailId = req.body;
+    const { emailId } = req.params;
     let user = await User.findOne({ emailId: emailId });
     if (!user) {
         res.status(406).json({

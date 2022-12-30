@@ -4,8 +4,7 @@ const secretKey = process.env.secretKey;
 
 exports.isUser = async (req, res, next) => {
     const { authorization } = req.headers;
-    console.log(authorization);
-    if (authorization == null) {
+    if (!authorization) {
         res.status(405).json({
             title: "Invalid Request",
             message: "Please Check the Request Header Token Mismatch"
@@ -32,12 +31,12 @@ exports.isUser = async (req, res, next) => {
     }
     if (!result) {
         res.status(405).json({
-            title: "Invalid Request",
+            title: "Token Mismatch",
             message: "Please Check the Request Header Token Mismatch"
         });
         return
     }
-    let user = await User.findOne({ emailId: req.params.emailId });
+    let user = await User.findOne({ _id: result.id });
     if (!user) {
         res.status(403).json({
             title: "Invalid Request",
@@ -47,7 +46,7 @@ exports.isUser = async (req, res, next) => {
     }
     if (user.token != token) {
         res.status(405).json({
-            title: "Invalid Request",
+            title: "Token Mismatch in Database",
             message: "Please Check the Request Header Token Mismatch"
         });
         return
