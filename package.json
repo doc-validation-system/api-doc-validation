@@ -4,18 +4,15 @@
   "description": "This is server application of DocumentValidationApi",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://x-o-auth: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@github.com/doc-validation-system/api-doc-validation.git"
+    "url": ""
   },
   "author": "Sourashis Paul",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/doc-validation-system/api-doc-validation/issues"
-  },
-  "homepage": "https://github.com/doc-validation-system/api-doc-validation#readme",
   "dependencies": {
     "body-parser": "^1.20.1",
     "cors": "^2.8.5",
