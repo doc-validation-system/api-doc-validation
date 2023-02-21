@@ -1,11 +1,18 @@
-const { User } = require("../model/userModel");
+const {
+  User
+} = require("../model/userModel");
 const md5 = require("md5");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const secretKey = process.env.secretKey;
+const tesseract = require("tesseract.js");
 
 exports.postUserSignup = async (req, res) => {
-  const { emailId, organizationName, password } = req.body;
+  const {
+    emailId,
+    organizationName,
+    password
+  } = req.body;
   let missingVal = "";
   if (!emailId || !organizationName || !password) {
     if (!emailId) missingVal += "emailId ";
@@ -38,6 +45,16 @@ exports.postUserSignup = async (req, res) => {
       if (month.length < 2) month = "0" + month;
       if (date.length < 2) date = "0" + date;
       const apiKey = getApiKey();
+      let user = await User.findOne({
+        emailId: emailId
+      });
+      if (user) {
+        res.status(403).json({
+          title: "Invalid Request",
+          message: "User Already Exists",
+        });
+        return;
+      }
       const newUser = new User({
         emailId: emailId,
         password: md5(password),
@@ -46,14 +63,6 @@ exports.postUserSignup = async (req, res) => {
         apiKey: apiKey,
         updateAt: today.getFullYear() + "-" + month + "-" + date,
       });
-      let user = await User.findOne({ emailId: emailId });
-      if (user) {
-        res.status(403).json({
-          title: "Invalid Request",
-          message: "User Already Exists",
-        });
-        return;
-      }
       newUser.save((err) => {
         if (err) console.log(err + "ERROR");
         else {
@@ -101,7 +110,10 @@ exports.postUserSignup = async (req, res) => {
 };
 
 exports.postUserLogin = async (req, res) => {
-  const { emailId, password } = req.body;
+  const {
+    emailId,
+    password
+  } = req.body;
   let missingVal = "";
   if (!emailId || !password) {
     if (!emailId) missingVal += "emailId";
@@ -127,12 +139,13 @@ exports.postUserLogin = async (req, res) => {
       return;
     }
     try {
-      let user = await User.findOne({ emailId: emailId });
+      let user = await User.findOne({
+        emailId: emailId
+      });
       if (!user) {
         res.status(404).json({
           title: "Invalid Username or Password",
-          message:
-            "User Not Exists in DocValidationApi If you are facing any issue drop a mail team.docvalidation@gmail.com our team will respond you within 24 hrs",
+          message: "User Not Exists in DocValidationApi If you are facing any issue drop a mail team.docvalidation@gmail.com our team will respond you within 24 hrs",
         });
         return;
       } else {
@@ -142,16 +155,17 @@ exports.postUserLogin = async (req, res) => {
         if (month.length < 2) month = "0" + month;
         if (date.length < 2) date = "0" + date;
         if (user.password == md5(password)) {
-          const token = jwt.sign({ id: user._id }, secretKey, {
+          const token = jwt.sign({
+            id: user._id
+          }, secretKey, {
             expiresIn: "12h",
           });
-          await User.updateOne(
-            { emailId: emailId },
-            {
-              token: token,
-              updateAt: today.getFullYear() + "-" + month + "-" + date,
-            }
-          );
+          await User.updateOne({
+            emailId: emailId
+          }, {
+            token: token,
+            updateAt: today.getFullYear() + "-" + month + "-" + date,
+          });
           res.status(200).json({
             title: "User Successfully Logged in",
             organizationName: user.organizationName,
@@ -177,8 +191,12 @@ exports.postUserLogin = async (req, res) => {
 };
 
 exports.getProfileDetails = async (req, res) => {
-  const { emailId } = req.params;
-  let user = await User.findOne({ emailId: emailId });
+  const {
+    emailId
+  } = req.params;
+  let user = await User.findOne({
+    emailId: emailId
+  });
   if (!user) {
     res.status(406).json({
       title: "Invalid Data",
@@ -192,6 +210,49 @@ exports.getProfileDetails = async (req, res) => {
       createdAt: user.createdAt,
       updateAt: user.updateAt,
     });
+  }
+};
+
+exports.postGetData = async (req, res) => {
+  console.log(req.file.originalname);
+  let data = "";
+  tesseract
+    .recognize(`uploads/${req.file.originalname}`, "eng")
+    .then((res) => {
+      data = res.data.text;
+      getName(data);
+      getDate(data);
+      getId(data);
+    })
+    .catch((error) => {
+      console.log(error.message);
+    });
+
+  let name = "CHARCHIKA BISWAS";
+  let dob = "26/06/2001";
+  let id = "5919 0458 3769";
+
+  function getName(data) {
+    let nameList = name.split(" ");
+    let dataList = data.split(" ");
+    let countNameData = 0;
+    dataList.map(ele => ele.toUpperCase());
+    nameList.map(ele => {
+      if (dataList.includes(ele.toUpperCase()))
+        countNameData++;
+    });
+    let result = (countNameData === nameList.length);
+    console.log(result);
+  }
+
+  function getDate(data) {
+    let result = data.includes(dob);
+    console.log(result);
+  }
+
+  function getId(data) {
+    let result = data.includes(id);
+    console.log(result);
   }
 };
 

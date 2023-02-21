@@ -8,9 +8,21 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
-const { postUserSignup, postUserLogin, getProfileDetails } = require("./src/controller/userController");
+const { postUserSignup, postUserLogin, getProfileDetails , postGetData } = require("./src/controller/userController");
 const { isUser } = require("./src/middleware/isUser");
 mongoose.set('strictQuery', true);
+const multer = require('multer');
+//const upload = multer({ dest: 'uploads/' })
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    //const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.originalname)
+  }
+})
+const upload = multer({ storage: storage })
 
 
 const PORT = process.env.PORT || 3001;
@@ -41,6 +53,7 @@ app.post("/user/login", postUserLogin);
 
 app.get('/user/profile/:emailId', isUser, getProfileDetails);
 
+app.post("/user/getdata", upload.single("image"), postGetData);
 app.listen(PORT, () => {
     console.log("Server is Running");
 });
