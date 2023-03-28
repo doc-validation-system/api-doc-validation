@@ -4,4 +4,62 @@ The document validation process is being automated by developing an Application 
 
 # Documentation
 
--
+# User 
+# User Signup
+
+    /user/signup
+    
+- Request-Post
+  {
+   "emailId": String,
+   "organizationName": String,
+   "password": String
+  }
+
+- Response 201
+  {
+    "message": "User Registration Successfull"
+  }
+    
+# User Login
+
+    /user/login
+    
+- Request-Post
+  {
+   "emailId": String,
+   "password": String
+  }
+
+- Response 200
+  {
+    "message": "User Successfully Logged in"
+  }    
+  
+  # User Profile Details
+  
+      /user/profile/:emailId
+      
+- Request-Get
+  {
+    "emailId":String
+  }
+  
+- Response 200
+  {
+    "message": "Success"
+  }
+  
+  # For Every Error
+
+- Response [400,401,403,404,405,406,422,500]
+- {
+  "detail": 
+  {
+  "title": String<Short Description>,
+  "message" : String <Large Description>
+  }
+  }
+  
+  
+    
