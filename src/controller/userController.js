@@ -27,7 +27,7 @@ exports.postUserSignup = async (req, res) => {
     let matchEmail =
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     let matchPassword =
-      /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#$&*~]).{8,}$/;
+      /^(?=.?[A-Z])(?=.?[a-z])(?=.?[0-9])(?=.?[!@#$&*~]).{8,}$/;
     let errorValue = "";
     if (!emailId.match(matchEmail) || !password.match(matchPassword)) {
       if (!emailId.match(matchEmail)) errorValue += "Invalid Email";
@@ -127,7 +127,7 @@ exports.postUserLogin = async (req, res) => {
     let matchEmail =
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     let matchPassword =
-      /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#$&*~]).{8,}$/;
+      /^(?=.?[A-Z])(?=.?[a-z])(?=.?[0-9])(?=.?[!@#$&*~]).{8,}$/;
     let errorValue = "";
     if (!emailId.match(matchEmail) || !password.match(matchPassword)) {
       if (!emailId.match(matchEmail)) errorValue += "Invalid Email";
@@ -164,7 +164,7 @@ exports.postUserLogin = async (req, res) => {
             emailId: emailId
           }, {
             token: token,
-            updateAt: today.getFullYear() + "-" + month + "-" + date,
+            updateAt: today.getFullYear() + "-" + month + "-" + date
           });
           res.status(200).json({
             title: "User Successfully Logged in",
@@ -214,6 +214,13 @@ exports.getProfileDetails = async (req, res) => {
 };
 
 exports.postGetData = async (req, res) => {
+  const {
+    name,
+    dob,
+    voterId,
+    panId,
+    aadharId
+  } = req.body;
   console.log(req.file.originalname);
   let data = "";
   tesseract
@@ -227,10 +234,6 @@ exports.postGetData = async (req, res) => {
     .catch((error) => {
       console.log(error.message);
     });
-
-  let name = "CHARCHIKA BISWAS";
-  let dob = "26/06/2001";
-  let id = "5919 0458 3769";
 
   function getName(data) {
     let nameList = name.split(" ");
@@ -255,6 +258,37 @@ exports.postGetData = async (req, res) => {
     console.log(result);
   }
 };
+exports.postUserLogOut = async (req, res) => {
+  const {
+    emailId
+  } = req.body;
+  console.log(emailId);
+  var today = new Date();
+  var month = String(today.getMonth() + 1);
+  var date = String(today.getDate());
+  if (month.length < 2) month = "0" + month;
+  if (date.length < 2) date = "0" + date;
+  try {
+    await User.updateOne({
+      emailId: emailId
+    }, {
+      token: "",
+      updateAt: today.getFullYear() + "-" + month + "-" + date
+    });
+
+    res.status(201).json({
+      title: "Success",
+      message: `Successfully Logged out`,
+    });
+  } catch (e) {
+    res.status(500).json({
+      status: "Server Error",
+      message: "Internal Server Error, Server temporarily out of Service",
+    });
+    console.log(e);
+  }
+
+}
 
 function getApiKey() {
   let apiKey = "";
