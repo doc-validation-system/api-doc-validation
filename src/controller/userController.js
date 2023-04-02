@@ -1,6 +1,4 @@
-const {
-  User
-} = require("../model/userModel");
+const { User } = require("../model/userModel");
 const md5 = require("md5");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -8,11 +6,7 @@ const secretKey = process.env.secretKey;
 const tesseract = require("tesseract.js");
 
 exports.postUserSignup = async (req, res) => {
-  const {
-    emailId,
-    organizationName,
-    password
-  } = req.body;
+  const { emailId, organizationName, password } = req.body;
   let missingVal = "";
   if (!emailId || !organizationName || !password) {
     if (!emailId) missingVal += "emailId ";
@@ -27,7 +21,7 @@ exports.postUserSignup = async (req, res) => {
     let matchEmail =
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     let matchPassword =
-      /^(?=.?[A-Z])(?=.?[a-z])(?=.?[0-9])(?=.?[!@#$&*~]).{8,}$/;
+      /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#$&*~]).{8,}$/;
     let errorValue = "";
     if (!emailId.match(matchEmail) || !password.match(matchPassword)) {
       if (!emailId.match(matchEmail)) errorValue += "Invalid Email";
@@ -44,9 +38,16 @@ exports.postUserSignup = async (req, res) => {
       var date = String(today.getDate());
       if (month.length < 2) month = "0" + month;
       if (date.length < 2) date = "0" + date;
-      const apiKey = getApiKey();
+      let flagApi=true;
+      while(flagApi){
+        const apiKey = getApiKey();
+        let user= await User.findOne({apiKey: apiKey});
+        if(!user){
+          flagApi=false;
+        }
+      }
       let user = await User.findOne({
-        emailId: emailId
+        emailId: emailId,
       });
       if (user) {
         res.status(403).json({
@@ -90,7 +91,6 @@ exports.postUserSignup = async (req, res) => {
               });
               return;
             } else {
-              console.log("Email sent: " + info.response);
               res.status(201).json({
                 title: "Request Generated Succcessfully",
                 message: `${emailId} registration successfull`,
@@ -110,10 +110,7 @@ exports.postUserSignup = async (req, res) => {
 };
 
 exports.postUserLogin = async (req, res) => {
-  const {
-    emailId,
-    password
-  } = req.body;
+  const { emailId, password } = req.body;
   let missingVal = "";
   if (!emailId || !password) {
     if (!emailId) missingVal += "emailId";
@@ -127,7 +124,7 @@ exports.postUserLogin = async (req, res) => {
     let matchEmail =
       /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     let matchPassword =
-      /^(?=.?[A-Z])(?=.?[a-z])(?=.?[0-9])(?=.?[!@#$&*~]).{8,}$/;
+      /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#$&*~]).{8,}$/;
     let errorValue = "";
     if (!emailId.match(matchEmail) || !password.match(matchPassword)) {
       if (!emailId.match(matchEmail)) errorValue += "Invalid Email";
@@ -140,12 +137,13 @@ exports.postUserLogin = async (req, res) => {
     }
     try {
       let user = await User.findOne({
-        emailId: emailId
+        emailId: emailId,
       });
       if (!user) {
         res.status(404).json({
           title: "Invalid Username or Password",
-          message: "User Not Exists in DocValidationApi If you are facing any issue drop a mail team.docvalidation@gmail.com our team will respond you within 24 hrs",
+          message:
+            "User Not Exists in DocValidationApi If you are facing any issue drop a mail team.docvalidation@gmail.com our team will respond you within 24 hrs",
         });
         return;
       } else {
@@ -155,17 +153,18 @@ exports.postUserLogin = async (req, res) => {
         if (month.length < 2) month = "0" + month;
         if (date.length < 2) date = "0" + date;
         if (user.password == md5(password)) {
-          const token = jwt.sign({
-            id: user._id
-          }, secretKey, {
+          const token = jwt.sign({ id: user._id }, secretKey, {
             expiresIn: "12h",
           });
-          await User.updateOne({
-            emailId: emailId
-          }, {
-            token: token,
-            updateAt: today.getFullYear() + "-" + month + "-" + date
-          });
+          await User.updateOne(
+            {
+              emailId: emailId,
+            },
+            {
+              token: token,
+              updateAt: today.getFullYear() + "-" + month + "-" + date,
+            }
+          );
           res.status(200).json({
             title: "User Successfully Logged in",
             organizationName: user.organizationName,
@@ -191,11 +190,9 @@ exports.postUserLogin = async (req, res) => {
 };
 
 exports.getProfileDetails = async (req, res) => {
-  const {
-    emailId
-  } = req.params;
+  const { emailId } = req.params;
   let user = await User.findOne({
-    emailId: emailId
+    emailId: emailId,
   });
   if (!user) {
     res.status(406).json({
@@ -214,50 +211,51 @@ exports.getProfileDetails = async (req, res) => {
 };
 
 exports.postGetData = async (req, res) => {
-  const {
-    name,
-    dob,
-    voterId,
-    panId,
-    aadharId
-  } = req.body;
-  console.log(req.file.originalname);
+  const {apiKey,name,
+    dob,voterId,panId,aadharId}=req.body;
   let data = "";
-  tesseract
-    .recognize(`uploads/${req.file.originalname}`, "eng")
+  let result={};
+  let fileName;
+  for(let i=0;i<req.files.length;i++){
+    fileName=req.files[i].originalname.split("_")[1];
+    fileName=fileName.split(".")[0];
+    if(fileName!=='voter'&&fileName!=='aadhar'&&fileName!=='pan'){
+      res.status(401).json({
+        title: "Invalid File Name",
+        message: "File Name should be in proper convention"
+      });
+      return
+    }
+   await tesseract
+    .recognize(`uploads/${req.files[i].originalname}`, "eng")
     .then((res) => {
       data = res.data.text;
-      getName(data);
-      getDate(data);
-      getId(data);
+      let foundName=getName(data,name);
+      let foundDob=getDate(data,dob);
+      let foundId;
+      if(fileName==='voter'){
+        foundId=getId(data,voterId);
+      }else if(fileName==='aadhar'){
+        foundId=getId(data,aadharId);
+      }else if(fileName==='pan'){
+        foundId=getId(data,panId);
+      }
+      result[fileName]={
+        name: foundName,
+        dob: foundDob,
+        id: foundId
+      }
     })
     .catch((error) => {
       console.log(error.message);
     });
-
-  function getName(data) {
-    let nameList = name.split(" ");
-    let dataList = data.split(" ");
-    let countNameData = 0;
-    dataList.map(ele => ele.toUpperCase());
-    nameList.map(ele => {
-      if (dataList.includes(ele.toUpperCase()))
-        countNameData++;
-    });
-    let result = (countNameData === nameList.length);
-    console.log(result);
   }
+  res.status(200).json({
+    title: "Successfully Data Received",
+    data: result
+  });
+}
 
-  function getDate(data) {
-    let result = data.includes(dob);
-    console.log(result);
-  }
-
-  function getId(data) {
-    let result = data.includes(id);
-    console.log(result);
-  }
-};
 exports.postUserLogOut = async (req, res) => {
   const {
     emailId
@@ -293,11 +291,11 @@ exports.postUserLogOut = async (req, res) => {
 function getApiKey() {
   let apiKey = "";
   let charList = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 20; i++) {
     let randomNumber = Math.trunc(Math.random() * 52);
     apiKey = apiKey + charList.charAt(randomNumber);
   }
-  for (var i = 0; i < 3; i++) {
+  for (var i = 0; i < 5; i++) {
     apiKey = apiKey + Math.trunc(Math.random() * 9) + 1;
   }
   for (var i = 0; i < 5; i++) {
@@ -305,4 +303,30 @@ function getApiKey() {
     apiKey = apiKey + charList.charAt(randomNumber);
   }
   return apiKey;
+}
+
+
+
+function getName(data,name) {
+  let nameList = name.split(" ");
+  let dataList = data.split(" ");
+  let countNameData = 0;
+  dataList=dataList.map((ele) =>{
+    return  ele.toUpperCase();
+  });
+  nameList.map((ele) => {
+    if (dataList.includes(ele.toUpperCase())) countNameData++;
+  });
+  let result = countNameData === nameList.length;
+  return result;
+}
+
+function getDate(data,dob) {
+  let result = data.includes(dob);
+  return result;
+}
+
+function getId(data,id) {
+  let result = data.includes(id);
+  return result;
 }
