@@ -254,7 +254,39 @@ exports.postGetData = async (req, res) => {
     title: "Successfully Data Received",
     data: result
   });
-};
+}
+
+exports.postUserLogOut = async (req, res) => {
+  const {
+    emailId
+  } = req.body;
+  console.log(emailId);
+  var today = new Date();
+  var month = String(today.getMonth() + 1);
+  var date = String(today.getDate());
+  if (month.length < 2) month = "0" + month;
+  if (date.length < 2) date = "0" + date;
+  try {
+    await User.updateOne({
+      emailId: emailId
+    }, {
+      token: "",
+      updateAt: today.getFullYear() + "-" + month + "-" + date
+    });
+
+    res.status(201).json({
+      title: "Success",
+      message: `Successfully Logged out`,
+    });
+  } catch (e) {
+    res.status(500).json({
+      status: "Server Error",
+      message: "Internal Server Error, Server temporarily out of Service",
+    });
+    console.log(e);
+  }
+
+}
 
 function getApiKey() {
   let apiKey = "";

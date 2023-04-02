@@ -8,7 +8,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
-const {  postUserSignup,  postUserLogin,  getProfileDetails, postGetData } = require("./src/controller/userController");
+const {  postUserSignup,  postUserLogin,  getProfileDetails, postGetData, postUserLogOut } = require("./src/controller/userController");
 const { isUser } = require("./src/middleware/isUser");
 mongoose.set("strictQuery", true);
 const multer = require("multer");
@@ -55,6 +55,8 @@ app.post("/user/login", postUserLogin);
 app.get("/user/profile/:emailId", isUser, getProfileDetails);
 
 app.post("/user/getdata", upload.array("image", 3), postGetData);
+
+app.post("/user/logout",isUser,postUserLogOut);
 
 //Server Port
 app.listen(PORT, () => {
