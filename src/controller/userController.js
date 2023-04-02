@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const secretKey = process.env.secretKey;
 const tesseract = require("tesseract.js");
+const fs=require("fs");
 
 exports.postUserSignup = async (req, res) => {
   const { emailId, organizationName, password } = req.body;
@@ -39,8 +40,9 @@ exports.postUserSignup = async (req, res) => {
       if (month.length < 2) month = "0" + month;
       if (date.length < 2) date = "0" + date;
       let flagApi=true;
+      let apiKey='';
       while(flagApi){
-        const apiKey = getApiKey();
+        apiKey = getApiKey();
         let user= await User.findOne({apiKey: apiKey});
         if(!user){
           flagApi=false;
@@ -216,6 +218,13 @@ exports.postGetData = async (req, res) => {
   let data = "";
   let result={};
   let fileName;
+  if(req.files.length<1){
+    res.status(403).json({
+      title: "File Missing",
+      message: "Please send the file to validate it."
+    });
+    return
+  }
   for(let i=0;i<req.files.length;i++){
     fileName=req.files[i].originalname.split("_")[1];
     fileName=fileName.split(".")[0];
@@ -245,6 +254,7 @@ exports.postGetData = async (req, res) => {
         dob: foundDob,
         id: foundId
       }
+      fs.unlinkSync(`uploads/${req.files[i].originalname}`);
     })
     .catch((error) => {
       console.log(error.message);
