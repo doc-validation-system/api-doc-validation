@@ -1,5 +1,5 @@
 const express = require("express");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const cors = require("cors");
 const session = require("express-session");
 const bodyParser = require("body-parser");
@@ -8,39 +8,40 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
-const { postUserSignup, postUserLogin, getProfileDetails , postGetData } = require("./src/controller/userController");
+const {  postUserSignup,  postUserLogin,  getProfileDetails, postGetData } = require("./src/controller/userController");
 const { isUser } = require("./src/middleware/isUser");
-mongoose.set('strictQuery', true);
-const multer = require('multer');
-//const upload = multer({ dest: 'uploads/' })
+mongoose.set("strictQuery", true);
+const multer = require("multer");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/')
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
-    //const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-    cb(null, file.originalname)
-  }
-})
-const upload = multer({ storage: storage })
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage: storage });
 
-
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 const pass = process.env.dbPassword;
 
-mongoose.connect(`mongodb+srv://admin-aces:${pass}@cluster0.buvru.mongodb.net/docvalidation`, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then((res) => {
+mongoose
+  .connect(
+    `mongodb+srv://admin-aces:${pass}@cluster0.buvru.mongodb.net/docvalidation`,
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
+  .then((res) => {
     console.log("MongoDB connected");
-});
-
+  });
 
 app.get("/", (req, res) => {
-    res.status(200).json({
-        status: 200,
-        message: "Api is Running Copyright @TeamDocValidation"
-    })
+  res.status(200).json({
+    status: 200,
+    message: "Api is Running Copyright @TeamDocValidation",
+  });
 });
 
 // User Signup API
@@ -51,9 +52,11 @@ app.post("/user/login", postUserLogin);
 
 // User Profile Details
 
-app.get('/user/profile/:emailId', isUser, getProfileDetails);
+app.get("/user/profile/:emailId", isUser, getProfileDetails);
 
-app.post("/user/getdata", upload.single("image"), postGetData);
+app.post("/user/getdata", upload.array("image", 3), postGetData);
+
+//Server Port
 app.listen(PORT, () => {
-    console.log("Server is Running");
+  console.log("Server is Running");
 });
