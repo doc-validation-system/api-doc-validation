@@ -11,9 +11,9 @@ The document validation process is being automated by developing an Application 
     
 - Request-Post
   {
-   "emailId": String,
-   "organizationName": String,
-   "password": String
+    "emailId": String,
+    "organizationName": String,
+    "password": String
   }
 
 - Response 201
@@ -27,8 +27,8 @@ The document validation process is being automated by developing an Application 
     
 - Request-Post
   {
-   "emailId": String,
-   "password": String
+    "emailId": String,
+    "password": String
   }
 
 - Response 200
@@ -42,7 +42,7 @@ The document validation process is being automated by developing an Application 
       
 - Request-Get
   {
-    "emailId":String
+    "emailId": String
   }
   
 - Response 200
@@ -50,10 +50,24 @@ The document validation process is being automated by developing an Application 
     "message": "Success"
   }
   
+# User Logout
+
+    /user/logout
+ 
+- Request-Post
+  {
+    "emailId": String
+  }
+   
+- Response 500
+  {
+    "message": "Successfully Logged out"
+  }
+   
 # For Every Error
 
 - Response [400,401,403,404,405,406,422,500]
-- {
+  {
   "detail": 
   {
   "title": String<Short Description>,
