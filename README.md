@@ -36,7 +36,7 @@ The document validation process is being automated by developing an Application 
     "message": "User Successfully Logged in"
   }    
   
-  # User Profile Details
+# User Profile Details
   
       /user/profile/:emailId
       
@@ -50,7 +50,7 @@ The document validation process is being automated by developing an Application 
     "message": "Success"
   }
   
-  # For Every Error
+# For Every Error
 
 - Response [400,401,403,404,405,406,422,500]
 - {
