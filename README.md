@@ -38,7 +38,7 @@ The document validation process is being automated by developing an Application 
   
 # User Profile Details
   
-      /user/profile/:emailId
+    /user/profile/:emailId
       
 - Request-Get
   {
