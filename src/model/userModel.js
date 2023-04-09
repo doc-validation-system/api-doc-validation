@@ -15,6 +15,7 @@ const customerUser = new Schema({
         type: String,
         required: true
     },
+    numberOfRequest: String,
     createdAt: {
         type: String,
         required: true

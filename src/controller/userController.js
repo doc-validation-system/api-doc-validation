@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const secretKey = process.env.secretKey;
 const tesseract = require("tesseract.js");
+const fs=require("fs");
+const { date } = require("joi");
 
 exports.postUserSignup = async (req, res) => {
   const { emailId, organizationName, password } = req.body;
@@ -39,8 +41,9 @@ exports.postUserSignup = async (req, res) => {
       if (month.length < 2) month = "0" + month;
       if (date.length < 2) date = "0" + date;
       let flagApi=true;
+      let apiKey='';
       while(flagApi){
-        const apiKey = getApiKey();
+        apiKey = getApiKey();
         let user= await User.findOne({apiKey: apiKey});
         if(!user){
           flagApi=false;
@@ -213,48 +216,174 @@ exports.getProfileDetails = async (req, res) => {
 exports.postGetData = async (req, res) => {
   const {apiKey,name,
     dob,voterId,panId,aadharId}=req.body;
+  let user=await User.findOne({apiKey: apiKey});
+  console.log("Request Received");
+  if(!apiKey || !name || !dob || !voterId  || !panId || !aadharId){
+    let missingVal='';
+    if(!apiKey){
+      missingVal+='API KEY ';
+    }
+    if(!name){
+      missingVal+='NAME';
+    }
+    if(!dob){
+      missingVal+='DATE OF BIRTH ';
+    }
+    if(!voterId){
+      missingVal+='VOTER ID ';
+    }
+    if(!panId){
+      missingVal+='PAN ID ';
+    }
+    if(!aadharId){
+      missingVal+='AADHAR ID';
+    }
+    res.status(401).json({
+      title: "Missing Required Data",
+      message: `Missing Values are ${missingVal}`
+    });
+    for(let i=0;i<req.files.length;i++){
+      fs.unlinkSync(`uploads/${req.files[i].originalname}`);
+    }
+    return
+  }
+  if(!user){
+    res.status(403).json({
+      title: "Invalid User",
+      message: "Invalid API Key Received from User"
+    });
+    for(let i=0;i<req.files.length;i++){
+      fs.unlinkSync(`uploads/${req.files[i].originalname}`);
+    }
+    return
+  }
+  let noOfReq=user.numberOfRequest;
+  if(!noOfReq){
+    noOfReq=1;
+  }else{
+    noOfReq=Number(noOfReq)+1;
+  }
+  await User.findByIdAndUpdate({_id: user._id},{numberOfRequest: noOfReq});
   let data = "";
   let result={};
   let fileName;
-  for(let i=0;i<req.files.length;i++){
-    fileName=req.files[i].originalname.split("_")[1];
-    fileName=fileName.split(".")[0];
-    if(fileName!=='voter'&&fileName!=='aadhar'&&fileName!=='pan'){
-      res.status(401).json({
-        title: "Invalid File Name",
-        message: "File Name should be in proper convention"
-      });
-      return
-    }
-   await tesseract
-    .recognize(`uploads/${req.files[i].originalname}`, "eng")
-    .then((res) => {
-      data = res.data.text;
-      let foundName=getName(data,name);
-      let foundDob=getDate(data,dob);
-      let foundId;
-      if(fileName==='voter'){
-        foundId=getId(data,voterId);
-      }else if(fileName==='aadhar'){
-        foundId=getId(data,aadharId);
-      }else if(fileName==='pan'){
-        foundId=getId(data,panId);
-      }
-      result[fileName]={
-        name: foundName,
-        dob: foundDob,
-        id: foundId
-      }
-    })
-    .catch((error) => {
-      console.log(error.message);
+  let foundData=0;
+  if(req.files.length<1){
+    res.status(403).json({
+      title: "File Missing",
+      message: "Please send the file to validate it."
     });
+    for(let i=0;i<req.files.length;i++){
+      fs.unlinkSync(`uploads/${req.files[i].originalname}`);
+    }
+    return
   }
-  res.status(200).json({
-    title: "Successfully Data Received",
-    data: result
-  });
-};
+  try{
+    let dobData=new Date(dob);
+    let date=String(dobData.getDate());
+    let month=String(dobData.getMonth()+1);
+    if(date.length<2){
+      date="0"+date;
+    }
+    if(month.length<2){
+      month="0"+month;
+    }
+    dobData=date+"/"+month+"/"+dobData.getFullYear();
+    console.log(dobData);
+    for(let i=0;i<req.files.length;i++){
+      fileName=req.files[i].originalname.split("_")[1];
+      fileName=fileName.split(".")[0];
+      if(fileName!=='voter'&&fileName!=='aadhar'&&fileName!=='pan'){
+        res.status(401).json({
+          title: "Invalid File Name",
+          message: "File Name should be in proper convention"
+        });
+        return
+      }
+      console.log("Request in Process");
+     await tesseract
+      .recognize(`uploads/${req.files[i].originalname}`, "eng")
+      .then((res) => {
+        data = res.data.text;
+        let foundName=getName(data,name);
+        let foundDob=getDate(data,dobData);
+        let foundId;
+        if(fileName==='voter'){
+          foundId=getId(data,voterId,fileName);
+        }else if(fileName==='aadhar'){
+          foundId=getId(data,aadharId,fileName);
+        }else if(fileName==='pan'){
+          foundId=getId(data,panId,fileName);
+        }
+        result[fileName]={
+          name: foundName,
+          dob: foundDob,
+          id: foundId
+        }
+        fs.unlinkSync(`uploads/${req.files[i].originalname}`);
+      })
+      .catch((error) => {
+        console.log(error.message);
+      });
+    }
+    for(let data in result){
+      for(let d in result[data]){
+        if(result[data][d]==true){
+          foundData++;
+        }
+      }
+    }
+    console.log("Response will be sent within a second");
+    const accuracyData=((foundData/(3*req.files.length))*100).toFixed(2);
+    res.status(200).json({
+      title: "Successfully Data Received",
+      data: result,
+      accuracy: accuracyData
+    });
+  }catch(e){
+    res.status(500).json({
+      status: "Server Error",
+      message: "Internal Server Error, Server temporarily out of Service",
+    });
+    console.log(e);
+    for(let i=0;i<req.files.length;i++){
+      fs.unlinkSync(`uploads/${req.files[i].originalname}`);
+    }
+  }
+  
+}
+
+exports.postUserLogOut = async (req, res) => {
+  const {
+    emailId
+  } = req.body;
+  console.log(emailId);
+  var today = new Date();
+  var month = String(today.getMonth() + 1);
+  var date = String(today.getDate());
+  if (month.length < 2) month = "0" + month;
+  if (date.length < 2) date = "0" + date;
+  try {
+    await User.updateOne({
+      emailId: emailId
+    }, {
+      token: "",
+      updateAt: today.getFullYear() + "-" + month + "-" + date
+    });
+
+    res.status(201).json({
+      title: "Success",
+      message: `Successfully Logged out`,
+    });
+  } catch (e) {
+    res.status(500).json({
+      status: "Server Error",
+      message: "Internal Server Error, Server temporarily out of Service",
+    });
+    console.log(e);
+  }
+
+}
 
 function getApiKey() {
   let apiKey = "";
@@ -294,7 +423,25 @@ function getDate(data,dob) {
   return result;
 }
 
-function getId(data,id) {
-  let result = data.includes(id);
+function getId(data,id,fileName) {
+  let result=false;
+  if(fileName=='aadhar'){
+    let countData=0;
+    let idList=id.split('');
+    for(let i=0;i<idList.length;i+=4){
+      let newList=idList.slice(i,i+4);
+      let idData='';
+      for(let j=0;j<4;j++){
+        idData+=newList[j];
+      }
+      let foundId=data.includes(idData);
+      if(foundId){
+        countData++;
+      }
+    }
+    return countData===3;
+  }else{
+    result = data.includes(id);
+  }
   return result;
 }
