@@ -59,7 +59,7 @@ The document validation process is being automated by developing an Application 
     "emailId": String
   }
    
-- Response 500
+- Response 201
   {
     "message": "Successfully Logged out"
   }
