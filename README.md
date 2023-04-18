@@ -18,7 +18,7 @@ The document validation process is being automated by developing an Application 
 
 - Response 201
   {
-    "message": "User Registration Successfull"
+    "message": "User Registration Successful"
   }
     
 # User Login
