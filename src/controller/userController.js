@@ -174,6 +174,7 @@ exports.postUserLogin = async (req, res) => {
             createdAt: user.createdAt,
             token: token,
             updateAt: user.updateAt,
+            apiKey: user.apiKey
           });
         } else {
           res.status(403).json({
@@ -209,6 +210,7 @@ exports.getProfileDetails = async (req, res) => {
       organizationName: user.organizationName,
       createdAt: user.createdAt,
       updateAt: user.updateAt,
+      apiKey: user.apiKey
     });
   }
 };
@@ -216,8 +218,6 @@ exports.getProfileDetails = async (req, res) => {
 exports.postGetData = async (req, res) => {
   const {apiKey,name,
     dob,voterId,panId,aadharId}=req.body;
-  let user=await User.findOne({apiKey: apiKey});
-  console.log("Request Received");
   if(!apiKey || !name || !dob || !voterId  || !panId || !aadharId){
     let missingVal='';
     if(!apiKey){
@@ -247,6 +247,8 @@ exports.postGetData = async (req, res) => {
     }
     return
   }
+  let user=await User.findOne({apiKey: apiKey});
+  console.log("Request Received");
   if(!user){
     res.status(403).json({
       title: "Invalid User",
@@ -278,6 +280,17 @@ exports.postGetData = async (req, res) => {
     }
     return
   }
+  let validateDOB=isIsoDate(dob);
+  if(!validateDOB){
+    res.status(405).json({
+      title: "Invalid Date Format",
+      message: "Please Enter Correct Date Format"
+    });
+    for(let i=0;i<req.files.length;i++){
+      fs.unlinkSync(`uploads/${req.files[i].originalname}`);
+    }
+    return
+  }
   try{
     let dobData=new Date(dob);
     let date=String(dobData.getDate());
@@ -289,7 +302,7 @@ exports.postGetData = async (req, res) => {
       month="0"+month;
     }
     dobData=date+"/"+month+"/"+dobData.getFullYear();
-    console.log(dobData);
+    //console.log(dobData);
     for(let i=0;i<req.files.length;i++){
       fileName=req.files[i].originalname.split("_")[1];
       fileName=fileName.split(".")[0];
@@ -305,6 +318,7 @@ exports.postGetData = async (req, res) => {
       .recognize(`uploads/${req.files[i].originalname}`, "eng")
       .then((res) => {
         data = res.data.text;
+        //console.log(data);
         let foundName=getName(data,name);
         let foundDob=getDate(data,dobData);
         let foundId;
@@ -357,7 +371,6 @@ exports.postUserLogOut = async (req, res) => {
   const {
     emailId
   } = req.body;
-  console.log(emailId);
   var today = new Date();
   var month = String(today.getMonth() + 1);
   var date = String(today.getDate());
@@ -408,12 +421,36 @@ function getName(data,name) {
   let nameList = name.split(" ");
   let dataList = data.split(" ");
   let countNameData = 0;
+  nameList=nameList.map(ele=>{
+    return ele.toUpperCase();
+  });
+  dataList=dataList.map(ele=>{
+    return ele.toUpperCase();
+  });
   dataList=dataList.map((ele) =>{
-    return  ele.toUpperCase();
+    let tempDataList=ele.split('');
+    let t='';
+    for(let i=0;i<tempDataList.length;i++){
+      try{
+        if(isAlpha(tempDataList[i])){
+          t+=tempDataList[i];
+        }else{
+          break;
+        }
+      }catch(e){
+        break;
+      }
+    }
+    return t.toString();
   });
-  nameList.map((ele) => {
-    if (dataList.includes(ele.toUpperCase())) countNameData++;
-  });
+  for(let i=0;i<nameList.length;i++){
+    for(let j=0;j<dataList.length;j++){
+      if(dataList[j]==nameList[i]){
+        countNameData++;
+        break;
+      }
+    }
+  }
   let result = countNameData === nameList.length;
   return result;
 }
@@ -426,6 +463,10 @@ function getDate(data,dob) {
 function getId(data,id,fileName) {
   let result=false;
   if(fileName=='aadhar'){
+    let matchAadhar= /^[2-9]{1}[0-9]+$/;
+    if(!matchAadhar.test(id) || !(id.length==12)){
+      return false;
+    }
     let countData=0;
     let idList=id.split('');
     for(let i=0;i<idList.length;i+=4){
@@ -440,8 +481,29 @@ function getId(data,id,fileName) {
       }
     }
     return countData===3;
-  }else{
+  }else if(fileName=='voter'){
+    let matchVoter=/^[A-Z]{3}[0-9]{7}$/;
+    if(!matchVoter.test(id) || !(id.length==10)){
+      return false;
+    }
     result = data.includes(id);
+  }else if(fileName=='pan'){
+    let matchPan=/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    if(!matchPan.test(id) || !(id.length==10)){
+      return false;
+    }
+    result=data.includes(id);
   }
   return result;
+}
+
+var isAlpha = function(ch){
+  return typeof ch === "string" && ch.length === 1
+         && (ch >= "a" && ch <= "z" || ch >= "A" && ch <= "Z");
+}
+
+function isIsoDate(str) {
+  if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)) return false;
+  const d = new Date(str); 
+  return d instanceof Date && !isNaN(d) && d.toISOString()===str; 
 }

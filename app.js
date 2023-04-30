@@ -12,6 +12,8 @@ const {  postUserSignup,  postUserLogin,  getProfileDetails, postGetData, postUs
 const { isUser } = require("./src/middleware/isUser");
 mongoose.set("strictQuery", true);
 const multer = require("multer");
+const swaggerJsDoc=require('swagger-jsdoc');
+const swaggerUi=require('swagger-ui-express');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -24,6 +26,25 @@ const upload = multer({ storage: storage });
 
 const PORT = process.env.PORT || 3000;
 const pass = process.env.dbPassword;
+
+const option ={
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'DocValidation API Documentation',
+      version: '1.0.0'
+    },
+    servers:[
+      {
+        url: 'http://localhost:3000/'
+      }
+    ]
+  },
+  apis: ['./app.js']
+}
+
+const swaggerDoc= swaggerJsDoc(option);
+app.use('/docs',swaggerUi.serve,swaggerUi.setup(swaggerDoc)); 
 
 mongoose
   .connect(
